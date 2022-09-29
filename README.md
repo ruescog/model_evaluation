@@ -9,7 +9,7 @@ documentation.
 ## Install
 
 ``` sh
-pip install model_testing
+pip install model_evaluation
 ```
 
 ## How to use
