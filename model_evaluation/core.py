@@ -14,6 +14,15 @@ from fastai.data.transforms import IndexSplitter
 from typing import Callable, Tuple
 
 # %% ../01_core.ipynb 4
+from pathlib import Path
+from sklearn.model_selection import BaseCrossValidator
+from fastai.vision.learner import unet_learner
+from fastai.data.block import DataBlock
+from fastai.data.load import DataLoader
+from fastai.data.transforms import IndexSplitter
+
+from typing import Callable, Tuple
+
 def evaluate(
     datablock_hparams: dict, # The hyperparameters used to get and load the data.
     dataloader_hparams: dict, # The hyperparameters used to define how the data is supplied to the learner.
@@ -26,7 +35,7 @@ def evaluate(
     # Defines all the metrics used in the training and evaluation phases
     metrics = ["validation"]
     other_metrics = learner_hparams["metrics"] if "metrics" in learner_hparams else []
-    results = dict([[str(metric), []] for metric in metrics + other_metrics])
+    results = dict([[metric.__class__.__name__, []] for metric in metrics + other_metrics])
     
     # Gets all the data
     get_items_form = "get_items" if "get_items" in datablock_hparams else "get_x"
@@ -38,15 +47,15 @@ def evaluate(
     y = [get_items[1](x) for x in X]
     for _, validation_indexes in technique.split(X, y):
         db = DataBlock(
-            *datablock_hparams,
+            **datablock_hparams,
             splitter = IndexSplitter(validation_indexes)
         )
-        dls = db.dataloaders(*dataloader_hparams)
-        learner = Learner(dls, *learner_hparams)
+        dls = db.dataloaders(**dataloader_hparams)
+        learner = unet_learner(dls, **learner_hparams).to_fp16()
         if learning_mode == "random":
-            learner.fit_one_cycle(*learning_hparams)
+            learner.fit_one_cycle(**learning_hparams)
         elif learning_mode == "finetune":
-            learner.fine_tune(*learning_hparams)
+            learner.fine_tune(**learning_hparams)
         else:
             raise Exception(f"{learning_mode} is not a learning_mode. Use 'random' or 'finetune' instead.")
         
