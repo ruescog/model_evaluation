@@ -1,1 +1,1 @@
-Sitemap: https://ruescog.github.io/model_testing/sitemap.xml
+Sitemap: https://ruescog.github.io/vision_models_evaluation/sitemap.xml

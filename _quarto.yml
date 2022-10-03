@@ -15,20 +15,20 @@ format:
     toc-depth: 4
 
 website:
-  title: "model_testing"
-  site-url: "https://ruescog.github.io/model_testing"
+  title: "vision_models_evaluation"
+  site-url: "https://ruescog.github.io/vision_models_evaluation"
   description: "A library to test fastai learners using some evaluation techniques."
   twitter-card: true
   open-graph: true
   repo-branch: master
-  repo-url: "https://github.com/ruescog/model_testing"
+  repo-url: "https://github.com/ruescog/vision_models_evaluation"
   repo-actions: [issue]
   navbar:
     background: primary
     search: true
     right:
       - icon: github
-        href: "https://github.com/ruescog/model_testing"
+        href: "https://github.com/ruescog/vision_models_evaluation"
   sidebar:
     style: "floating"
 
