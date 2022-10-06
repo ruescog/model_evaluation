@@ -35,22 +35,17 @@ def evaluate(
     # Defines all the metrics used in the training and evaluation phases
     metrics = ["validation"]
     other_metrics = learner_hparams["metrics"] if "metrics" in learner_hparams else []
-    results = dict([[metric.__class__.__name__, []] for metric in metrics + other_metrics])
+    all_metrics = list(map(lambda metric: metric if type(metric) == str else metric.__class__.__name__, metrics + other_metrics))
+    results = dict([[metric, []] for metric in all_metrics])
     
     # Gets all the data
     get_items_form = "get_items" if "get_items" in datablock_hparams else "get_x"
     get_items = [datablock_hparams[get_items_form], datablock_hparams["get_y"]]
-    if "splitter" in datablock_hparams:
-        del datablock_hparams["splitter"]
 
     X = get_items[0](dataloader_hparams["source"])
     y = [get_items[1](x) for x in X]
-    for _, validation_indexes in technique.split(X, y):
-        db = DataBlock(
-            **datablock_hparams,
-            splitter = IndexSplitter(validation_indexes)
-        )
-        dls = db.dataloaders(**dataloader_hparams)
+    for _, testing_indexes in technique.split(X, y):
+        dls = DataBlock(**datablock_hparams).dataloaders(**dataloader_hparams)
         learner = unet_learner(dls, **learner_hparams).to_fp16()
         if learning_mode == "random":
             learner.fit_one_cycle(**learning_hparams)
@@ -59,6 +54,9 @@ def evaluate(
         else:
             raise Exception(f"{learning_mode} is not a learning_mode. Use 'random' or 'finetune' instead.")
         
+        # Replaces the training dls and tests the model
+        datablock_hparams["splitter"] = IndexSplitter(testing_indexes)
+        learner.dls = DataBlock(**datablock_hparams).dataloaders(**dataloader_hparams)
         for metric, metric_value in zip(results, learner.validate()):
             results[metric] += [metric_value]
     
