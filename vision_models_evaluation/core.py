@@ -23,6 +23,9 @@ from fastai.data.transforms import IndexSplitter
 
 from typing import Callable, Tuple
 
+import gc
+import torch
+
 def evaluate(
     datablock_hparams: dict, # The hyperparameters used to get and load the data.
     dataloader_hparams: dict, # The hyperparameters used to define how the data is supplied to the learner.
@@ -59,5 +62,9 @@ def evaluate(
         learner.dls = DataBlock(**datablock_hparams).dataloaders(**dataloader_hparams)
         for metric, metric_value in zip(results, learner.validate()):
             results[metric] += [metric_value]
+        
+        # Wipes the memory of the gpu
+        gc.collect()
+        torch.cuda.empty_cache()
     
     return results
