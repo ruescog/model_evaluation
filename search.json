@@ -1,0 +1,30 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "vision_models_evaluation",
+    "section": "",
+    "text": "To install the library, just run:\npip install vision_models_evaluation"
+  },
+  {
+    "objectID": "index.html#install",
+    "href": "index.html#install",
+    "title": "vision_models_evaluation",
+    "section": "",
+    "text": "To install the library, just run:\npip install vision_models_evaluation"
+  },
+  {
+    "objectID": "index.html#how-to-use",
+    "href": "index.html#how-to-use",
+    "title": "vision_models_evaluation",
+    "section": "How to use",
+    "text": "How to use\nThis library provides a method that can help you in the process of model evaluation. Using the scikit-learn validation techniques you can validate your deep learning models.\nIn order to validate your model, you will need to build and train various versions of it (for example, using a KFold validation, it is needed to build five different models).\nFor doing so, you need to provide: the DataBlock hparams (hyperparameters), the DataLoader hparams, the technique used to split the data, the Learner construction hparams, the learning mode (whether to use a pretrained model or not: fit_one_cycle or finetune) and the Learner training hparams. So, the first step is to define them all:\ndb_hparams = {\n    \"blocks\": (ImageBlock, MaskBlock(codes)),\n    \"get_items\": partial(get_image_files, folders=['train']),\n    \"get_y\": get_y_fn,\n    \"item_tfms\": [Resize((480,640)), TargetMaskConvertTransform(), transformPipeline],\n    \"batch_tfms\": Normalize.from_stats(*imagenet_stats)\n}\ndl_hparams = {\n    \"source\": path_images,\n    \"bs\": 4\n}\ntechnique = KFold(n_splits = 5)\nlearner_hparams = {\n    \"arch\": resnet18,\n    \"pretrained\": True,\n    \"metrics\": [DiceMulti()]\n}\nlearning_hparams = {\n    \"epochs\": 10,\n    \"base_lr\": 0.001,\n    \"freeze_epochs\": 1\n}\nlearning_mode = \"finetune\"\nThen, you need to call the evaluate method with those defined hparams. After the execution, the method will return a dictionary of results (for each metric used to test the model, the value obtained in each fold).\nr = evaluate(\n    db_hparams,\n    dl_hparams,\n    technique,\n    learner_hparams,\n    learning_hparams,\n    learning_mode\n)\nFinally, you can plot the metrics using a boxplot from pandas, for example:\nimport pandas as pd\n\ndf = pd.DataFrame(r)\ndf.boxplot(\"DiceMulti\");\n\nprint(\n    df[\"DiceMulti\"].mean(),\n    df[\"DiceMulti\"].std()\n)\n\n\n\ndownload.png\n\n\nYou can use this method to evaluate your model, but you can also use it to evaluate several models with distinct hparams: you can get the results for each of them and then plot the average of their metrics."
+  },
+  {
+    "objectID": "core.html",
+    "href": "core.html",
+    "title": "core",
+    "section": "",
+    "text": "source\n\nevaluate\n\n evaluate (datablock_hparams:dict, dataloader_hparams:dict,\n           technique:sklearn.model_selection._split.BaseCrossValidator,\n           learner_hparams:dict, learning_hparams:dict,\n           learning_mode:str='finetune', saving_hparams:dict={'save_best':\n           False}, verbose:bool=False)\n\n\n\n\n\n\n\n\n\n\n\nType\nDefault\nDetails\n\n\n\n\ndatablock_hparams\ndict\n\nThe hyperparameters used to get and load the data.\n\n\ndataloader_hparams\ndict\n\nThe hyperparameters used to define how the data is supplied to the learner.\n\n\ntechnique\nBaseCrossValidator\n\nThe technique used to split the data.\n\n\nlearner_hparams\ndict\n\nThe parameters used to build the learner (backbone, cbs…). Those hyperparams are used to build all the models.\n\n\nlearning_hparams\ndict\n\nThe parameters used to train the learner (learning_rate, freeze_epochs).\n\n\nlearning_mode\nstr\nfinetune\nThe learning mode: random or finetune.\n\n\nsaving_hparams\ndict\n{‘save_best’: False}\nThe model saving information {save_best: bool, metric: str}.\n\n\nverbose\nbool\nFalse\nWhether the method shows logging messages"
+  }
+]
