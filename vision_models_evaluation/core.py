@@ -31,23 +31,29 @@ def evaluate(
     dataloader_hparams: dict, # The hyperparameters used to define how the data is supplied to the learner.
     technique: BaseCrossValidator, # The technique used to split the data.
     learner_hparams: dict,  # The parameters used to build the learner (backbone, cbs...). Those hyperparams are used to build all the models.
-    learning_hparams: dict, # The parameters used to train the learner (learning_rate, freeze_epochs)
-    learning_mode: str = "finetune" # The learning mode: random or finetune.
+    learning_hparams: dict, # The parameters used to train the learner (learning_rate, freeze_epochs).
+    learning_mode: str = "finetune", # The learning mode: random or finetune.
+    saving_hparams: dict = {"save_best": False}, # The model saving information {save_best: bool, metric: str}.
+    verbose: bool = False # Whether the method shows logging messages
 ):
     
-    # Defines all the metrics used in the training and evaluation phases
+    # defines all the metrics used in the training and evaluation phases
     metrics = ["validation"]
     other_metrics = learner_hparams["metrics"] if "metrics" in learner_hparams else []
     all_metrics = list(map(lambda metric: metric if type(metric) == str else metric.__class__.__name__, metrics + other_metrics))
     results = dict([[metric, []] for metric in all_metrics])
     
-    # Gets all the data
+    # gets all the data
     get_items_form = "get_items" if "get_items" in datablock_hparams else "get_x"
     get_items = [datablock_hparams[get_items_form], datablock_hparams["get_y"]]
 
     X = get_items[0](dataloader_hparams["source"])
     y = [get_items[1](x) for x in X]
+    best_score = 0
+    index = 1
+    if verbose: print("Starting the training for a new model")
     for _, testing_indexes in technique.split(X, y):
+        if verbose: print(f"Training the fold {index}"); index += 1
         dls = DataBlock(**datablock_hparams).dataloaders(**dataloader_hparams)
         learner = unet_learner(dls, **learner_hparams).to_fp16()
         if learning_mode == "random":
@@ -57,13 +63,25 @@ def evaluate(
         else:
             raise Exception(f"{learning_mode} is not a learning_mode. Use 'random' or 'finetune' instead.")
         
-        # Replaces the training dls and tests the model
+        # replaces the training dls and tests the model
         datablock_hparams["splitter"] = IndexSplitter(testing_indexes)
         learner.dls = DataBlock(**datablock_hparams).dataloaders(**dataloader_hparams)
+        log = ""
         for metric, metric_value in zip(results, learner.validate()):
             results[metric] += [metric_value]
+            log += f"  {metric}: {metric_value}  /"
         
-        # Wipes the memory of the gpu
+        if verbose: print(f"Test results for the model. {log[:-1]}")
+        
+        # saves the model
+        if saving_hparams["save_best"]:
+            score = results[saving_hparams["metric"]][-1]
+            if score > best_score:
+                if verbose: print(f"Saving best model because {saving_hparams['metric']} {round(score, 4)} >= {round(best_score, 4)}.")
+                best_score = score
+                learner.save(saving_hparams["model_name"])
+        
+        # wipes the memory of the gpu
         gc.collect()
         torch.cuda.empty_cache()
     

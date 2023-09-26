@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "vision_models_evaluation"
+  site-url: "https://ruescog.github.io/vision_models_evaluation"
+  description: "A library to test fastai learners using some evaluation techniques."
+  repo-branch: master
+  repo-url: "https://github.com/ruescog/vision_models_evaluation"

@@ -84,7 +84,7 @@ print(
 )
 ```
 
-![download.png](index_files/figure-gfm/download.png)
+![download.png](index_files/figure-commonmark/406aa26d-1-download.png)
 
 You can use this method to evaluate your model, but you can also use it
 to evaluate several models with distinct hparams: you can get the
